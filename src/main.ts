@@ -35,11 +35,8 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  // Health check — registered before app.listen so Render can reach it immediately
-  const httpAdapter = app.getHttpAdapter();
-  const healthHandler = (_req: any, res: any) => { res.status(200).json({ status: 'ok', service: 'liveai-backend', model: '100% Free Forever', timestamp: new Date().toISOString(), uptime: Math.floor(process.uptime()) }); };
-  httpAdapter.get('/health', healthHandler);
-  httpAdapter.head('/health', healthHandler);
+  // Health check middleware — handles GET, HEAD, and OPTIONS for Render & UptimeRobot
+  app.use('/health', (_req: any, res: any) => {
     res.status(200).json({
       status: 'ok',
       service: 'liveai-backend',
