@@ -1,3 +1,7 @@
+// MUST be first — forces IPv4 DNS before TypeORM or pg initializes
+import * as dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
+
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -7,7 +11,7 @@ import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    logger: ['error', 'warn', 'log'],
   });
 
   app.use(json({ limit: '1mb' }));
@@ -31,6 +35,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  // Health check — registered before app.listen so Render can reach it immediately
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get('/health', (_req: any, res: any) => {
     res.status(200).json({
@@ -54,8 +59,8 @@ async function bootstrap() {
   }
 
   const port = parseInt(process.env.PORT ?? '3000', 10);
-  await app.listen(port);
-  console.log(`🚀 LiveAi free backend running on http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 LiveAi free backend running on port ${port}`);
 }
 
 bootstrap();
