@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: liveai-backend
+    env: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: node dist/main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: postgresql://postgres:liveai@007y@S4@db.yktacumecmbwgkdgztip.supabase.co:5432/postgres
+      - key: JWT_SECRET
+        value: LiveAiFreeSecret2025
+      - key: ENCRYPTION_MASTER_KEY
+        value: dummy
+      - key: PHONE_HMAC_SECRET
+        value: dummy
