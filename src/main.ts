@@ -37,7 +37,9 @@ async function bootstrap() {
 
   // Health check — registered before app.listen so Render can reach it immediately
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/health', (_req: any, res: any) => {
+  const healthHandler = (_req: any, res: any) => { res.status(200).json({ status: 'ok', service: 'liveai-backend', model: '100% Free Forever', timestamp: new Date().toISOString(), uptime: Math.floor(process.uptime()) }); };
+  httpAdapter.get('/health', healthHandler);
+  httpAdapter.head('/health', healthHandler);
     res.status(200).json({
       status: 'ok',
       service: 'liveai-backend',
