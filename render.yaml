@@ -12,8 +12,10 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: NODE_OPTIONS
+        value: --dns-result-order=ipv4first
       - key: DATABASE_URL
-        value: postgresql://postgres:liveai@007y@S4@db.yktacumecmbwgkdgztip.supabase.co:5432/postgres
+        value: postgresql://postgres:liveai%40007y%40S4@db.yktacumecmbwgkdgztip.supabase.co:5432/postgres?sslmode=require
       - key: JWT_SECRET
         value: LiveAiFreeSecret2025
       - key: ENCRYPTION_MASTER_KEY
