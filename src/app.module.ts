@@ -23,15 +23,24 @@ import { User } from './entities/user.entity';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const rawUrl = config.getOrThrow<string>('DATABASE_URL');
-
-        // Parse the URL into individual components to avoid pg URL-parsing issues
-        // (especially @ signs in passwords and sslmode query params)
         const url = new URL(rawUrl);
-        const host     = url.hostname;
-        const port     = parseInt(url.port, 10) || 5432;
-        const username = decodeURIComponent(url.username);
+
+        let host = url.hostname;
+        let port = parseInt(url.port, 10) || 5432;
+        let username = decodeURIComponent(url.username);
         const password = decodeURIComponent(url.password);
-        const database = url.pathname.replace(/^\//, '');
+        const database = url.pathname.replace(/^\//, '') || 'postgres';
+
+        // Auto-fix for Supabase direct URLs on IPv4-only hosts (Render free tier):
+        // Convert db.[ref].supabase.co:5432 -> aws-0-ap-south-1.pooler.supabase.com:6543 with username postgres.[ref]
+        if (host.includes('.supabase.co') && !host.includes('pooler')) {
+          const projectRef = host.split('.')[0];
+          host = 'aws-0-ap-south-1.pooler.supabase.com';
+          port = 6543;
+          if (!username.includes('.')) {
+            username = `${username}.${projectRef}`;
+          }
+        }
 
         return {
           type: 'postgres',
@@ -43,12 +52,10 @@ import { User } from './entities/user.entity';
           entities: [User],
           synchronize: true,
           ssl: { rejectUnauthorized: false },
-          retryAttempts: 5,
+          retryAttempts: 10,
           retryDelay: 3000,
-          // Force IPv4 at pg driver level (belt & suspenders with dns fix in main.ts)
           extra: {
-            family: 4,
-            connectionTimeoutMillis: 10000,
+            connectionTimeoutMillis: 15000,
           },
         };
       },
