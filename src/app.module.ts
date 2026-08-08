@@ -25,10 +25,12 @@ import { User } from './entities/user.entity';
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
         entities: [User],
-        synchronize: true, // auto-sync schema for dev
-        ssl: config.get<string>('DATABASE_URL')?.includes('supabase')
-          ? { rejectUnauthorized: false }
-          : false,
+        synchronize: true,
+        ssl: { rejectUnauthorized: false },
+        // Force IPv4 — Render free tier cannot reach IPv6 addresses
+        extra: {
+          family: 4,
+        },
       }),
     }),
     AuthModule,
