@@ -21,17 +21,37 @@ import { User } from './entities/user.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User],
-        synchronize: true,
-        ssl: { rejectUnauthorized: false },
-        // Force IPv4 — Render free tier cannot reach IPv6 addresses
-        extra: {
-          family: 4,
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const rawUrl = config.getOrThrow<string>('DATABASE_URL');
+
+        // Parse the URL into individual components to avoid pg URL-parsing issues
+        // (especially @ signs in passwords and sslmode query params)
+        const url = new URL(rawUrl);
+        const host     = url.hostname;
+        const port     = parseInt(url.port, 10) || 5432;
+        const username = decodeURIComponent(url.username);
+        const password = decodeURIComponent(url.password);
+        const database = url.pathname.replace(/^\//, '');
+
+        return {
+          type: 'postgres',
+          host,
+          port,
+          username,
+          password,
+          database,
+          entities: [User],
+          synchronize: true,
+          ssl: { rejectUnauthorized: false },
+          retryAttempts: 5,
+          retryDelay: 3000,
+          // Force IPv4 at pg driver level (belt & suspenders with dns fix in main.ts)
+          extra: {
+            family: 4,
+            connectionTimeoutMillis: 10000,
+          },
+        };
+      },
     }),
     AuthModule,
     UsersModule,
